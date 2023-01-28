@@ -11,17 +11,16 @@ namespace LogWrapper.Data
     public class ApplicationData : INotifyPropertyChanged
     {
         public List<string> Logs { get; set; } = new();
-        public List<string> SelectedLogs => LogsPerCategory[SelectedCategory];
-
-        public Dictionary<string, List<string>> LogsPerCategory { get; set; } = new();
+        public ObservableCollection<string> SelectedLogs { get; } = new();
 
         public ObservableCollection<string> Categories { get; } = new();
 
-        public string SelectedCategory { get; set; } = "*";
+        private Regex groupingRegex = new Regex("");
 
+        public HashSet<string> SelectedCategories { get; } = new();
+ 
         public ApplicationData()
         {
-            this.LogsPerCategory.Add("*", new());
             OnTotalChange();
         }
 
@@ -30,49 +29,42 @@ namespace LogWrapper.Data
         public void SetLogs(List<string> logs)
         {
             this.Logs = logs;
-            this.LogsPerCategory.Clear();
-            this.LogsPerCategory.Add("*", logs);
-            this.SelectedCategory = "*";
-            OnTotalChange();
+            GroupLogs(groupingRegex);
         }
 
         public void GroupLogs(Regex regex)
         {
-            LogsPerCategory.Clear();
-            LogsPerCategory["*"] = new List<string>();
+            Categories.Clear();
+            Categories.Add("*");
+            groupingRegex = regex;
 
             foreach (var log in Logs)
             {
-                var matches = regex.Matches(log);
-                string category = "*";
-                if (matches.Any())
+                var category = GetCategory(log);
+                if (!Categories.Contains(category))
                 {
-                    category = matches.First().Groups[1].Value;
+                    Categories.Add(category);
                 }
-
-                if (!LogsPerCategory.ContainsKey(category))
-                {
-                    LogsPerCategory[category] = new List<string>();
-                }
-
-                LogsPerCategory[category].Add(log);
             }
 
-            SelectedCategory = "*";
             OnTotalChange();
+        }
+
+        private string GetCategory(string log)
+        {
+            var matches = groupingRegex.Matches(log);
+            if (matches.Any() && matches.First().Groups.Count > 0)
+            {
+                return matches.First().Groups[1].Value;
+            }
+            return "none";
         }
 
         private void OnTotalChange()
         {
-            Categories.Clear();
-            foreach(var key in LogsPerCategory.Keys)
-            {
-                Categories.Add(key);
-            }
             NotifyPropertyChanged(nameof(SelectedLogs));
-            NotifyPropertyChanged(nameof(SelectedCategory));
-            NotifyPropertyChanged(nameof(LogsPerCategory));
             NotifyPropertyChanged(nameof(Categories));
+            GatherLogsfromCategories();
         }
 
         private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
@@ -80,10 +72,50 @@ namespace LogWrapper.Data
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        internal void FocusCategory(string category)
+        internal void FocusCategories(IEnumerable<string> categories)
         {
-            SelectedCategory = category;
-            OnTotalChange();
+            foreach(var c in categories)
+            {
+                SelectedCategories.Add(c);
+            }
+
+            GatherLogsfromCategories();
+
+            NotifyPropertyChanged(nameof(SelectedLogs));
+        }
+
+        internal void UnfocusCategories(IEnumerable<string> categories)
+        {
+            foreach (var c in categories)
+            {
+                SelectedCategories.Remove(c);
+            }
+
+            GatherLogsfromCategories();
+
+            NotifyPropertyChanged(nameof(SelectedLogs));
+        }
+
+        private void GatherLogsfromCategories()
+        {
+            SelectedLogs.Clear();
+            if (SelectedCategories.Contains("*"))
+            {
+                foreach (var log in Logs)
+                {
+                    SelectedLogs.Add(log);
+                }
+                return;
+            }
+            foreach(var log in Logs)
+            {
+                var category = GetCategory(log);
+                if(SelectedCategories.Contains(category))
+                {
+                    SelectedLogs.Add(log);
+                }
+            }
+
         }
     }
 }

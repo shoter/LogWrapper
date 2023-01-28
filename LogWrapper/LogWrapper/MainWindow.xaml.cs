@@ -32,7 +32,6 @@ namespace LogWrapper
             data.GroupLogs(new Regex("<(.*)>"));
 
             this.DataContext = data;
-            CategoryList.Items.Refresh();
         }
 
         private void CopyFromClipboard(object sender, RoutedEventArgs e)
@@ -63,8 +62,7 @@ namespace LogWrapper
         private void Group(object sender, RoutedEventArgs e)
         {
             var regex = CreateRegexFromTemplateInput();
-
-
+            data.GroupLogs(regex);
         }
 
         private Regex CreateRegexFromTemplateInput()
@@ -73,12 +71,10 @@ namespace LogWrapper
             return new Regex(groupText);
         }
 
-        private void OnCategoryFocus(object sender, RoutedEventArgs e)
+        private void OnCategoryFocus(object sender, SelectionChangedEventArgs e)
         {
-            var category = (sender as TextBlock).Text;
-            data.FocusCategory(category);
-
-
+            data.FocusCategories(e.AddedItems.Cast<string>());
+            data.UnfocusCategories(e.RemovedItems.Cast<string>());
         }
     }
 }

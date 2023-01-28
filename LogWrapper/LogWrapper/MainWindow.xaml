@@ -31,15 +31,15 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <ListView Name="CategoryList" ItemsSource="{Binding Categories}">
+            <ListView SelectedValue="*" Name="CategoryList" ItemsSource="{Binding Categories}" SelectionChanged="OnCategoryFocus" >
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock Text="{Binding}" GotFocus="OnCategoryFocus" />
+                        <TextBlock Text="{Binding}"/>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
 
-        <comp:SimpleLogViewer DataContext="{Binding Logs}" x:Name="LogViewer" Grid.Column="1" Grid.Row="0"/>
+        <comp:SimpleLogViewer DataContext="{Binding SelectedLogs}" x:Name="LogViewer" Grid.Column="1" Grid.Row="0"/>
 
         <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal">
                 <StackPanel Orientation="Horizontal">
